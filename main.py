@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from starlette.responses import RedirectResponse
 from app.schemas import *
 import json
+from app.auth import signJWT
 
 app = FastAPI()
 
@@ -88,6 +89,6 @@ async def delete_menu(item_id: int):
 @app.post("/user/signup")
 async def signup(newUser: User):
     users.append(newUser)
-    return(newUser)
+    return signJWT(newUser.username)
 
 
