@@ -2,34 +2,24 @@ from fastapi import FastAPI, HTTPException
 from fastapi.params import Depends
 from starlette.responses import RedirectResponse
 from app.schemas import Token, TokenData, User, LoginSchema, MenuItem
-import json
+from app.menu import saveJson, data, menu
 from app.auth import signJWT
-from app.auth_bearer import JWTBearer
-
-from fastapi.security import OAuth2PasswordBearer
-
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from app.hash import get_password_hash, verify_password
 
 app = FastAPI()
 
-
-# Menus
-with open('menu.json', 'r') as read_file:
-    data = json.load(read_file)
-
-
-def saveJson(data):
-    with open('menu.json', 'w') as dumpFile:
-        json.dump(data, dumpFile)
-
-menu = data['menu']
-
 # Users
-users = []
+users = [
+    {
+        'username' : 'asdf',
+        'password' : '$2b$12$Vaco7Mnoe3kFAKd7EJictuMLP53VyNyQgtM2EUUNxIUQIeuFQBtyu'
+    }
+]
 
 
 
-
-
+auth_scheme = OAuth2PasswordBearer(tokenUrl='user/login')
 
 # Routing
 @app.get("/")
@@ -39,27 +29,37 @@ async def root():
 
 @app.post("/user/signup", tags=['Authorization'])
 async def signup(newUser: User):
-    users.append(newUser)
-    return signJWT(newUser.username)
+    user = newUser.dict()
+    user['password'] = get_password_hash(user['password'])
+    users.append(user)
+    print(users)
+    return ({
+        "username" : newUser.username,
+        "status" : "user created"
+    })
 
 
 def check_user(data: LoginSchema):
     for user in users :
-        if user.username == data.username and user.password == data.password :
+        if user['username'] == data.username and verify_password(data.password, user['password']) :
             return True
     return False
 
 @app.post("/user/login", tags=['Authorization'])
-async def user_login(user: LoginSchema):
+async def user_login(user: OAuth2PasswordRequestForm = Depends()):
     if check_user(user) :
         return signJWT(user.username)
     return {
         'error' : 'wrong login details!'
     }
 
+@app.get("users/me", tags=['user'], dependencies=[Depends(auth_scheme)])
+async def current_user(user: User):
+    print('asdf')
 
 
-@app.get('/menu/', dependencies=[Depends(JWTBearer())], tags=['Menu'])
+
+@app.get('/menu/', dependencies=[Depends(auth_scheme)], tags=['Menu'])
 async def read_menu():
     try:
         return menu
@@ -67,7 +67,7 @@ async def read_menu():
         raise HTTPException(status_code=404, detail=f'item not found')
 
 
-@app.get('/menu/{item_id}', dependencies=[Depends(JWTBearer())], tags=['Menu'])
+@app.get('/menu/{item_id}', dependencies=[Depends(auth_scheme)], tags=['Menu'])
 async def read_menu(item_id: int):
     for menu_item in menu:
         if menu_item['id'] == item_id:
@@ -75,7 +75,7 @@ async def read_menu(item_id: int):
     raise HTTPException(status_code=404, detail=f'item not found')
 
 
-@app.post('/menu/', dependencies=[Depends(JWTBearer())], tags=['Menu'])
+@app.post('/menu/', dependencies=[Depends(auth_scheme)], tags=['Menu'])
 async def add_menu(request: MenuItem):
     newMenu = {'id': len(menu)+1, **request.dict()}
     menu.append(newMenu)
@@ -87,7 +87,7 @@ async def add_menu(request: MenuItem):
     return(newMenu)
 
 
-@app.patch('/menu/{item_id}', dependencies=[Depends(JWTBearer())], tags=['Menu'])
+@app.patch('/menu/{item_id}', dependencies=[Depends(auth_scheme)], tags=['Menu'])
 async def update_menu(item_id: int, request: MenuItem):
     req = request.dict()
     for menu_item in menu:
@@ -98,7 +98,7 @@ async def update_menu(item_id: int, request: MenuItem):
     saveJson(data, "updated")
 
 
-@app.delete('/menu/{item_id}', dependencies=[Depends(JWTBearer())], tags=['Menu'])
+@app.delete('/menu/{item_id}', dependencies=[Depends(auth_scheme)], tags=['Menu'])
 async def delete_menu(item_id: int):
     for menu_item in menu:
         if menu_item['id'] == item_id:
