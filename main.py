@@ -87,9 +87,9 @@ async def update_menu(item_id: int, request: MenuItem):
     for menu_item in menu:
         if menu_item['id'] == item_id:
             menu_item['name'] = req['name']
-            return(menu_item)
-    data['menu'] = menu
-    saveJson(data, 'updated')
+            data['menu'] = menu
+            saveJson(data)
+            return(menu_item, 'updated')
 
 
 @app.delete('/menu/{item_id}', dependencies=[Depends(auth_scheme)], tags=['Menu'])
