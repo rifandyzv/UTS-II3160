@@ -1,11 +1,1 @@
-{
-  "menu": [
-    { "id": 1, "name": "nasi" },
-    { "id": 2, "name": "sayur" },
-    { "id": 3, "name": "ayam bakar" },
-    { "id": 4, "name": "Onigiri" },
-    { "id": 5, "name": "Lontong" },
-    { "id": 6, "name": "Seblak pedesnya dikit" },
-    { "id": 7, "name": "test" }
-  ]
-}
+{"menu": [{"id": 1, "name": "nasi"}, {"id": 2, "name": "sayur"}, {"id": 3, "name": "ayam bakar"}, {"id": 4, "name": "Onigiri"}, {"id": 5, "name": "Lontong"}]}

@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.params import Depends
 from starlette.responses import RedirectResponse
-from app.schemas import Token, TokenData, User, LoginSchema, MenuItem
+from app.schemas import User, LoginSchema, MenuItem
 from app.menu import saveJson, data, menu
 from app.auth import signJWT
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -22,20 +22,20 @@ users = [
 auth_scheme = OAuth2PasswordBearer(tokenUrl='user/login')
 
 # Routing
-@app.get("/")
+@app.get('/')
 async def root():
-    return (RedirectResponse("/docs"))
+    return (RedirectResponse('/docs'))
 
 
-@app.post("/user/signup", tags=['Authorization'])
+@app.post('/user/signup', tags=['Authorization'])
 async def signup(newUser: User):
     user = newUser.dict()
     user['password'] = get_password_hash(user['password'])
     users.append(user)
     print(users)
     return ({
-        "username" : newUser.username,
-        "status" : "user created"
+        'username' : newUser.username,
+        'status' : 'user created'
     })
 
 
@@ -45,7 +45,7 @@ def check_user(data: LoginSchema):
             return True
     return False
 
-@app.post("/user/login", tags=['Authorization'])
+@app.post('/user/login', tags=['Authorization'])
 async def user_login(user: OAuth2PasswordRequestForm = Depends()):
     if check_user(user) :
         return signJWT(user.username)
@@ -53,14 +53,8 @@ async def user_login(user: OAuth2PasswordRequestForm = Depends()):
         'error' : 'wrong login details!'
     }
 
-@app.get("users/me", tags=['user'], dependencies=[Depends(auth_scheme)])
-async def current_user(user: User):
-    print('asdf')
-
-
-
 @app.get('/menu/', dependencies=[Depends(auth_scheme)], tags=['Menu'])
-async def read_menu():
+async def read_all_menu():
     try:
         return menu
     except:
@@ -95,7 +89,7 @@ async def update_menu(item_id: int, request: MenuItem):
             menu_item['name'] = req['name']
             return(menu_item)
     data['menu'] = menu
-    saveJson(data, "updated")
+    saveJson(data, 'updated')
 
 
 @app.delete('/menu/{item_id}', dependencies=[Depends(auth_scheme)], tags=['Menu'])
@@ -105,7 +99,7 @@ async def delete_menu(item_id: int):
             menu.remove(menu_item)
             data['menu'] = menu
             saveJson(data)
-            return(menu_item, "deleted")
+            return(menu_item, 'deleted')
 
     raise HTTPException(status_code=404, detail=f'item not found')
 
